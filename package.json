@@ -9,9 +9,18 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@tonejs/midi": "^2.0.28",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.562.0",
     "next": "16.1.1",
+    "pitchfinder": "^2.3.4",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-dropzone": "^14.3.8",
+    "react-youtube": "^10.1.0",
+    "tailwind-merge": "^3.4.0",
+    "tone": "^15.1.22"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
