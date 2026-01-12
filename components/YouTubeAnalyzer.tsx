@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { YouTube, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Youtube } from 'lucide-react';
 
 interface YouTubeAnalyzerProps {
   onAnalyzed: (videoId: string, title: string) => void;
@@ -70,7 +70,7 @@ export default function YouTubeAnalyzer({ onAnalyzed }: YouTubeAnalyzerProps) {
     <div className="flex flex-col items-center gap-4 p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
       <div className="text-center mb-4">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <YouTube className="w-6 h-6 text-red-500" />
+          <Youtube className="w-6 h-6 text-red-500" />
           <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
             YouTube Chord Analysis
           </h3>
