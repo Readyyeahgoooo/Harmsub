@@ -26,7 +26,7 @@ import {
 import { expandTemplate } from '@/lib/templateExpansion';
 import { generateVoicing } from '@/lib/voicing';
 import { getStylePack } from '@/lib/stylePacks';
-import Midi from '@tonejs/midi';
+import { Midi } from '@tonejs/midi';
 
 // ----------------------------------------------------------------------------
 // Main Harmonization Function
@@ -221,7 +221,7 @@ async function beamSearchProgression(
 
   // Return best path
   const bestPath = beam[0];
-  
+
   return {
     chords: bestPath.path.map(c => c.chord),
     voicings: [],

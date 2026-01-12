@@ -13,7 +13,7 @@ import { Note, ChordProgression, Melody, HarmonizationResult } from '@/types';
 import { HarmonizationOutput, HarmonicDistance, StylePackName, VoicingStyle } from '@/types/harmonyTypes';
 import { Harmonizer } from '@/lib/harmonizer';
 import { noteToFrequency, generateChordProgression, romanToChord, numberToNote } from '@/lib/musicTheory';
-import Midi from '@tonejs/midi';
+import { Midi } from '@tonejs/midi';
 
 export default function Home() {
   const [inputMethod, setInputMethod] = useState<'piano' | 'audio' | 'file' | null>(null);
