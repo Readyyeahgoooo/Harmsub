@@ -1,213 +1,114 @@
-'use client';
-
-import { useState } from 'react';
-import { STYLE_PACKS, getStylePackIds } from '@/lib/harmony/stylePacks';
-import { VOICING_CONFIGS, getVoicingDescription, VoicingPreset } from '@/lib/harmony/voicing';
-import { DISTANCE_LEVELS } from '@/lib/harmony/distance';
-import { Settings, Music, Sliders, Palette } from 'lucide-react';
+import React from 'react';
+import { StylePackName, VoicingStyle, HarmonicDistance } from '../types/harmonyTypes';
+import { STYLE_PACKS } from '../lib/stylePacks';
 
 interface HarmonyControlsProps {
-  onSettingsChange: (settings: HarmonySettings) => void;
-  initialSettings?: Partial<HarmonySettings>;
+    distance: HarmonicDistance;
+    setDistance: (d: HarmonicDistance) => void;
+    styleName: StylePackName;
+    setStyleName: (s: StylePackName) => void;
+    voicingStyle: VoicingStyle;
+    setVoicingStyle: (v: VoicingStyle) => void;
+    className?: string;
 }
 
-export interface HarmonySettings {
-  style: string;
-  distanceLevel: number;
-  voicingPreset: VoicingPreset;
-  tensionTolerance: 'low' | 'medium' | 'high';
-  key: string;
-  tempo: number;
-}
+export default function HarmonyControls({
+    distance,
+    setDistance,
+    styleName,
+    setStyleName,
+    voicingStyle,
+    setVoicingStyle,
+    className = ''
+}: HarmonyControlsProps) {
 
-const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-const KEYS_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const distanceLabels = [
+        "Diatonic Triads (Simplest)",
+        "Diatonic 7ths",
+        "Secondary Dominants (Pop)",
+        "Modal Mixture (Bossa/Soul)",
+        "Tritone Subs (Jazz)",
+        "Chromatic Mediants (Film)",
+        "Non-Functional (Wild)"
+    ];
 
-export default function HarmonyControls({ onSettingsChange, initialSettings }: HarmonyControlsProps) {
-  const [settings, setSettings] = useState<HarmonySettings>({
-    style: initialSettings?.style || 'pop',
-    distanceLevel: initialSettings?.distanceLevel ?? 1,
-    voicingPreset: initialSettings?.voicingPreset || 'clear_spacious',
-    tensionTolerance: initialSettings?.tensionTolerance || 'medium',
-    key: initialSettings?.key || 'C',
-    tempo: initialSettings?.tempo || 120,
-  });
+    return (
+        <div className={`p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 ${className}`}>
+            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                <span className="text-2xl">🎛️</span> Harmonization Settings
+            </h3>
 
-  const [isExpanded, setIsExpanded] = useState(false);
+            <div className="space-y-6">
+                {/* Style Selector */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Musical Style
+                    </label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {(Object.keys(STYLE_PACKS) as StylePackName[]).map((s) => (
+                            <button
+                                key={s}
+                                onClick={() => setStyleName(s)}
+                                className={`px-3 py-2 text-sm rounded-lg border transition-all ${styleName === s
+                                        ? 'bg-purple-100 border-purple-500 text-purple-700 dark:bg-purple-900 dark:border-purple-400 dark:text-purple-200 font-medium ring-1 ring-purple-500'
+                                        : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                    }`}
+                            >
+                                {STYLE_PACKS[s].displayName}
+                            </button>
+                        ))}
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        {STYLE_PACKS[styleName].description}
+                    </p>
+                </div>
 
-  const updateSetting = <K extends keyof HarmonySettings>(key: K, value: HarmonySettings[K]) => {
-    const newSettings = { ...settings, [key]: value };
-    
-    // Auto-adjust settings based on style
-    if (key === 'style') {
-      const pack = STYLE_PACKS[value as string];
-      if (pack) {
-        newSettings.distanceLevel = Math.min(settings.distanceLevel, pack.maxDistance);
-        newSettings.voicingPreset = pack.voicingPreset;
-        newSettings.tensionTolerance = pack.tensionTolerance;
-      }
-    }
-    
-    setSettings(newSettings);
-    onSettingsChange(newSettings);
-  };
+                {/* Harmonic Distance Slider */}
+                <div>
+                    <div className="flex justify-between mb-2">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Harmonic Adventurousness
+                        </label>
+                        <span className="text-xs font-mono px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-600 dark:text-gray-300">
+                            Level {distance}
+                        </span>
+                    </div>
+                    <input
+                        type="range"
+                        min="0"
+                        max="6"
+                        step="1"
+                        value={distance}
+                        onChange={(e) => setDistance(parseInt(e.target.value) as HarmonicDistance)}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 accent-purple-600"
+                    />
+                    <div className="flex justify-between mt-1">
+                        <span className="text-xs text-gray-500">Closest</span>
+                        <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                            {distanceLabels[distance]}
+                        </span>
+                        <span className="text-xs text-gray-500">Furthest</span>
+                    </div>
+                </div>
 
-  const selectedStyle = STYLE_PACKS[settings.style];
-  const selectedDistance = DISTANCE_LEVELS[settings.distanceLevel];
-
-  return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-4">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between text-left"
-      >
-        <div className="flex items-center gap-2">
-          <Settings className="w-5 h-5 text-purple-600" />
-          <span className="font-semibold text-gray-800 dark:text-gray-200">
-            Harmony Settings
-          </span>
+                {/* Voicing Style Selector */}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Voicing Style
+                    </label>
+                    <select
+                        value={voicingStyle}
+                        onChange={(e) => setVoicingStyle(e.target.value as VoicingStyle)}
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-purple-500 outline-none"
+                    >
+                        <option value="clear">Clear / Spacious (Pop)</option>
+                        <option value="jazz_standard">Jazz Standard (Rootless)</option>
+                        <option value="neo_soul">Neo-Soul (Clusters)</option>
+                        <option value="bossa">Bossa Nova (Smooth)</option>
+                        <option value="cinematic">Cinematic (Wide)</option>
+                    </select>
+                </div>
+            </div>
         </div>
-        <span className="text-sm text-gray-500">
-          {selectedStyle?.name} • Level {settings.distanceLevel}
-        </span>
-      </button>
-
-      {isExpanded && (
-        <div className="mt-4 space-y-6">
-          {/* Style Selection */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <Palette className="w-4 h-4" />
-              Style
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {getStylePackIds().map(id => {
-                const pack = STYLE_PACKS[id];
-                return (
-                  <button
-                    key={id}
-                    onClick={() => updateSetting('style', id)}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      settings.style === id
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {pack.name}
-                  </button>
-                );
-              })}
-            </div>
-            {selectedStyle && (
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                {selectedStyle.description}
-              </p>
-            )}
-          </div>
-
-          {/* Distance Level */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <Sliders className="w-4 h-4" />
-              Harmonic Distance: Level {settings.distanceLevel}
-            </label>
-            <input
-              type="range"
-              min="0"
-              max={selectedStyle?.maxDistance || 6}
-              value={settings.distanceLevel}
-              onChange={(e) => updateSetting('distanceLevel', parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>Diatonic</span>
-              <span>Chromatic</span>
-            </div>
-            {selectedDistance && (
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                {selectedDistance.name}: {selectedDistance.description}
-              </p>
-            )}
-          </div>
-
-          {/* Voicing Preset */}
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              <Music className="w-4 h-4" />
-              Voicing
-            </label>
-            <select
-              value={settings.voicingPreset}
-              onChange={(e) => updateSetting('voicingPreset', e.target.value as VoicingPreset)}
-              className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-200"
-            >
-              {Object.keys(VOICING_CONFIGS).map(preset => (
-                <option key={preset} value={preset}>
-                  {preset.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {getVoicingDescription(settings.voicingPreset)}
-            </p>
-          </div>
-
-          {/* Key and Tempo */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                Key
-              </label>
-              <select
-                value={settings.key}
-                onChange={(e) => updateSetting('key', e.target.value)}
-                className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-200"
-              >
-                {KEYS.map((key, i) => (
-                  <option key={key} value={key}>
-                    {key} / {KEYS_FLAT[i]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-                Tempo (BPM)
-              </label>
-              <input
-                type="number"
-                min="40"
-                max="240"
-                value={settings.tempo}
-                onChange={(e) => updateSetting('tempo', parseInt(e.target.value) || 120)}
-                className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-200"
-              />
-            </div>
-          </div>
-
-          {/* Tension Tolerance */}
-          <div>
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">
-              Tension Tolerance
-            </label>
-            <div className="flex gap-2">
-              {(['low', 'medium', 'high'] as const).map(level => (
-                <button
-                  key={level}
-                  onClick={() => updateSetting('tensionTolerance', level)}
-                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                    settings.tensionTolerance === level
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+    );
 }

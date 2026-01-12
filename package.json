@@ -20,7 +20,8 @@
     "react-dropzone": "^14.3.8",
     "react-youtube": "^10.1.0",
     "tailwind-merge": "^3.4.0",
-    "tone": "^15.1.22"
+    "tone": "^15.1.22",
+    "tonal": "^6.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
