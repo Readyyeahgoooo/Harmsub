@@ -1,21 +1,11 @@
-// OpenRouter AI Integration with Free Models
+// AI Integration - Client-side wrapper for server API
 
-const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-
-// Model priority (free models)
-export const AI_MODELS = [
-  { id: 'deepseek/deepseek-chat', name: 'DeepSeek', priority: 1 },
-  { id: 'zhipu-ai/glm-4-flash', name: 'GLM-4', priority: 2 },
-  { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini', priority: 3 },
-];
-
-// Rate limiting
+// Rate limiting (client-side tracking)
 const RATE_LIMITS = {
   perHour: 20,
   perDay: 100,
 };
 
-// Rate limit storage keys
 const STORAGE_KEYS = {
   hourlyCount: 'harmsub_hourly_count',
   hourlyReset: 'harmsub_hourly_reset',
@@ -23,7 +13,7 @@ const STORAGE_KEYS = {
   dailyReset: 'harmsub_daily_reset',
 };
 
-// Check and update rate limits
+// Check rate limits (client-side)
 function checkRateLimit(): { allowed: boolean; message: string } {
   if (typeof window === 'undefined') return { allowed: true, message: '' };
   
@@ -89,7 +79,7 @@ export function getRateLimitStatus(): { hourlyRemaining: number; dailyRemaining:
   };
 }
 
-// Call OpenRouter API with model fallback
+// Call server-side API route
 export async function callAI(
   prompt: string,
   systemPrompt?: string
@@ -100,54 +90,26 @@ export async function callAI(
     return { success: false, content: '', model: '', error: rateCheck.message };
   }
   
-  const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-  if (!apiKey) {
-    return { success: false, content: '', model: '', error: 'API key not configured' };
-  }
-  
-  // Try each model in priority order
-  for (const model of AI_MODELS) {
-    try {
-      const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://harmsub.vercel.app',
-          'X-Title': 'Harmsub',
-        },
-        body: JSON.stringify({
-          model: model.id,
-          messages: [
-            ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-            { role: 'user', content: prompt },
-          ],
-          max_tokens: 2000,
-          temperature: 0.7,
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.warn(`Model ${model.name} failed:`, errorData);
-        continue; // Try next model
-      }
-      
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || '';
-      
-      if (content) {
-        incrementRateLimit();
-        return { success: true, content, model: model.name };
-      }
-    } catch (error) {
-      console.warn(`Model ${model.name} error:`, error);
-      continue; // Try next model
+  try {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, systemPrompt }),
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      incrementRateLimit();
     }
+    
+    return data;
+  } catch (error) {
+    console.error('AI call error:', error);
+    return { success: false, content: '', model: '', error: 'Network error. Please try again.' };
   }
-  
-  return { success: false, content: '', model: '', error: 'All models failed. Please try again later.' };
 }
+
 
 // Analyze YouTube video for chord progression
 export async function analyzeYouTubeChords(videoTitle: string, videoDescription?: string): Promise<{

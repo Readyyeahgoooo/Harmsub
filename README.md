@@ -43,8 +43,10 @@ Based on the "Chord Generator Rulebook v1.0":
 ### Environment Variables
 Set the following in Vercel:
 ```
-NEXT_PUBLIC_OPENROUTER_API_KEY=your_openrouter_api_key
+OPENROUTER_API_KEY=your_openrouter_api_key
 ```
+
+Note: The API key is kept server-side only (not exposed to the client) for security.
 
 ### Deploy to Vercel
 1. Connect your GitHub repository to Vercel
