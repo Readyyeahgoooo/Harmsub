@@ -4,11 +4,9 @@
 // ============================================================================
 
 import { Template, ChordFunction, ChordSymbol } from '@/types/rulebook';
-import { generateChordsByDistance, getSubstitutionLadder } from '@/lib/distanceLadder';
-import { filterChordsByFunction } from '@/lib/distanceLadder';
 import {
-  getSubstitutionLadder,
   generateChordsByDistance,
+  getSubstitutionLadder,
   filterChordsByFunction,
 } from '@/lib/distanceLadder';
 
@@ -46,7 +44,7 @@ export const FOUR_CHORD_TEMPLATES: Template[] = [
     type: '4_chord',
     functions: ['T', 'T', 'PD', 'D'],
     description: 'COF/jazz-pop: I-vi-ii-V',
-    style_bias: ['jazz', 'pop_rnb'],
+    style_bias: ['jazz', 'pop'],
   },
   {
     name: 'I-iii-vi-ii',
@@ -60,21 +58,21 @@ export const FOUR_CHORD_TEMPLATES: Template[] = [
     type: '4_chord',
     functions: ['T', 'PD', 'D', 'T'],
     description: 'Borrowed/modal: I-iv-bVII-I',
-    style_bias: ['radiohead', 'pop_rnb'],
+    style_bias: ['radiohead', 'pop'],
   },
   {
     name: 'I-bVII-IV-I',
     type: '4_chord',
     functions: ['T', 'D', 'PD', 'T'],
     description: 'I-bVII-IV-I',
-    style_bias: ['radiohead', 'pop_rnb'],
+    style_bias: ['radiohead', 'pop'],
   },
   {
     name: 'I-bVI-IV-V',
     type: '4_chord',
     functions: ['T', 'PD', 'PD', 'D'],
     description: 'I-bVI-IV-V (cinematic lift)',
-    style_bias: ['cinematic', 'radiohead'],
+    style_bias: ['classical', 'radiohead'],
   },
 ];
 
@@ -102,7 +100,7 @@ export const EIGHT_CHORD_TEMPLATES: Template[] = [
     type: '8_chord',
     functions: ['T', 'D', 'PD', 'PD', 'PD', 'D', 'T', 'D'],
     description: 'I-bVII-IV-iv-ii-V-I-V (last V as turnaround)',
-    style_bias: ['radiohead', 'cinematic'],
+    style_bias: ['radiohead', 'classical'],
   },
   {
     name: 'backdoor_color',
@@ -116,7 +114,7 @@ export const EIGHT_CHORD_TEMPLATES: Template[] = [
     type: '8_chord',
     functions: ['T', 'PD', 'PD', 'T', 'PD', 'PD', 'PD', 'T'],
     description: 'I(pedal)-bVI-IV-I-bIII-bVII-IV-I',
-    style_bias: ['cinematic'],
+    style_bias: ['classical'],
   },
 ];
 
@@ -146,7 +144,7 @@ export const SIXTEEN_BAR_TEMPLATES: Template[] = [
       'T', 'T', 'PD', 'T', // 13-16: return to loop; one clear cadence at end
     ],
     description: 'Pop/R&B (functional clarity medium)',
-    style_bias: ['pop_rnb'],
+    style_bias: ['pop'],
   },
   {
     name: 'cinematic_form',
@@ -158,7 +156,7 @@ export const SIXTEEN_BAR_TEMPLATES: Template[] = [
       'T', 'D', 'PD', 'T', // 13-16: climax chord + resolution or open ending
     ],
     description: 'Cinematic (functional clarity low, pedal high)',
-    style_bias: ['cinematic'],
+    style_bias: ['classical'],
   },
 ];
 
@@ -197,7 +195,7 @@ export function expandTemplateSlot(
     styleFilteredChords = availableChords.filter(c =>
       c.quality.includes('7') || c.quality.includes('9') || c.quality.includes('13')
     );
-  } else if (styleBias.includes('pop_rnb')) {
+  } else if (styleBias.includes('pop')) {
     // Prefer simpler chords, slash chords, sus/add9
     styleFilteredChords = availableChords.filter(c =>
       c.quality.includes('sus') ||
@@ -211,7 +209,7 @@ export function expandTemplateSlot(
       c.tags.includes('chromatic_mediant') ||
       c.tags.includes('planing')
     );
-  } else if (styleBias.includes('cinematic')) {
+  } else if (styleBias.includes('classical')) {
     // Prefer non-functional, pedal, add2/add9
     styleFilteredChords = availableChords.filter(c =>
       c.tags.includes('nonfunctional') ||
@@ -368,11 +366,10 @@ export function getTemplateForStyle(style: string): Template | Template[] {
     jazz: [...FOUR_CHORD_TEMPLATES.filter(t => t.style_bias?.includes('jazz')),
            ...EIGHT_CHORD_TEMPLATES.filter(t => t.style_bias?.includes('jazz'))],
     bossa: FOUR_CHORD_TEMPLATES.filter(t => t.style_bias?.includes('bossa')),
-    pop_rnb: FOUR_CHORD_TEMPLATES.filter(t => t.style_bias?.includes('pop_rnb')),
+    pop: FOUR_CHORD_TEMPLATES.filter(t => t.style_bias?.includes('pop')),
     radiohead: FOUR_CHORD_TEMPLATES.filter(t => t.style_bias?.includes('radiohead')),
-    romantic_classical: FOUR_CHORD_TEMPLATES,
-    cinematic: [...FOUR_CHORD_TEMPLATES.filter(t => t.style_bias?.includes('cinematic')),
-              ...SIXTEEN_BAR_TEMPLATES.filter(t => t.style_bias?.includes('cinematic'))],
+    classical: [...FOUR_CHORD_TEMPLATES.filter(t => t.style_bias?.includes('classical')),
+              ...SIXTEEN_BAR_TEMPLATES.filter(t => t.style_bias?.includes('classical'))],
   };
   
   const templates = styleToTemplates[style] || FOUR_CHORD_TEMPLATES;

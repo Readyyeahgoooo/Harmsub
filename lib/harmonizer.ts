@@ -5,7 +5,7 @@ import {
     MelodyNote,
     NOTE_NAMES
 } from '../types/harmonyTypes';
-import { Note, Chord, ChordProgression } from '../types';
+import { Note, ChordUI, ChordProgression } from '../types';
 import { generateCandidates } from './candidateEngine';
 import { findBestPath } from './progressionGraph';
 import { generateVoicing } from './voicingEngine';

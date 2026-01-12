@@ -123,7 +123,7 @@ export function calculateVoiceLeadingScore(
   score += commonTones * weights.voice_leading * 10;
   
   // Penalize large root jumps (unless adventurous)
-  const rootMotion = Math.abs(toChord.root_pc - fromChord.root_pc);
+  let rootMotion = Math.abs(toChord.root_pc - fromChord.root_pc);
   if (rootMotion > 6) {
     rootMotion = 12 - rootMotion; // Use shortest interval
   }

@@ -9,7 +9,7 @@ export type ChordQuality =
     | 'sus2' | 'sus4' | 'maj7' | 'min7' | 'dom7' | 'dim7'
     | 'hdim7' | 'aug7' | 'minMaj7' | 'maj6' | 'min6';
 
-export type Extension = '6' | '7' | '9' | '11' | '13' | 'add9' | 'add11';
+export type Extension = '6' | '7' | '9' | '11' | '13' | 'add9' | 'add11' | 'b9' | '#9' | '#11' | 'b13' | 'maj7' | '2' | '4' | '10';
 
 export type Alteration = 'b5' | '#5' | 'b9' | '#9' | '#11' | 'b13';
 
@@ -207,6 +207,14 @@ export const EXTENSION_INTERVALS: Record<Extension, number> = {
     '13': 21,
     'add9': 14,
     'add11': 17,
+    'b9': 13,
+    '#9': 15,
+    '#11': 18,
+    'b13': 20,
+    'maj7': 11,
+    '2': 2,
+    '4': 5,
+    '10': 16,
 };
 
 export const ALTERATION_INTERVALS: Record<Alteration, number> = {

@@ -22,7 +22,7 @@ export type ChordQuality =
   | 'maj' | 'min' | 'dom' | 'dim' | 'hdim' | 'aug'
   | 'sus2' | 'sus4' | 'maj7' | 'min7' | 'dom7' | 'dim7'
   | 'hdim7' | 'maj9' | 'min9' | 'dom9' | 'dom11' | 'dom13'
-  | 'maj7#11' | 'dom7alt';
+  | 'maj7#11' | 'dom7alt' | 'dom7#11' | 'minmaj7' | 'maj7#5' | 'min6' | 'maj6' | 'dom7#5';
 
 export type ExtensionType = '6' | '7' | '9' | '11' | '13';
 export type AlterationType = 'b9' | '#9' | '#11' | 'b5' | '#5' | 'b13' | 'b7';
@@ -87,21 +87,18 @@ export interface HarmonizationControls {
 // 10.1 Genre/Style Packs
 // ----------------------------------------------------------------------------
 export type StylePackName =
-  | 'jazz' | 'bossa' | 'jazz_ballad' | 'pop_rnb'
-  | 'radiohead' | 'romantic_classical' | 'cinematic';
+  | 'jazz' | 'bossa' | 'pop' | 'radiohead' | 'classical';
 
 export interface StylePack {
   name: StylePackName;
+  displayName: string;
   description: string;
-  allowed_distance_levels: number[];
-  typical_chords: ChordQuality[];
-  typical_dominants: ChordQuality[];
-  progression_edge_weights: Record<string, number>;
-  voicing_default: VoicingPresetName;
-  template_bias: string[];
-  functional_clarity_default: number;
-  dominant_density_default: DominantDensity;
-  alteration_default: AlterationAmount;
+  preferredProgressions: string[][];
+  chordPriors: Map<string, number>;
+  transitionWeights: any[];
+  tensionPreferences: any[];
+  maxDistance: number;
+  preferredVoicing: string;
 }
 
 export type DominantDensity = 'none' | 'light' | 'medium' | 'heavy';

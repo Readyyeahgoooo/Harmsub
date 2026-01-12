@@ -160,7 +160,7 @@ export function getParallelScale(scale: Scale, targetMode: ScaleType): Scale {
 }
 
 export function getRelativeScale(scale: Scale): Scale {
-  const relativeRoots = {
+  const relativeRoots: Partial<Record<ScaleType, number>> = {
     major: 9, // A minor is relative to C major
     natural_minor: 3, // C major is relative to A minor
     harmonic_minor: 3,
@@ -172,7 +172,7 @@ export function getRelativeScale(scale: Scale): Scale {
     locrian: 6, // Db major relative to C locrian
   };
 
-  const relativeRoot = relativeRoots[scale.name] || 0;
+  const relativeRoot = relativeRoots[scale.name] ?? 0;
   return createScale('major', (scale.root + relativeRoot) % 12);
 }
 

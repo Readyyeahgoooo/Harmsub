@@ -231,14 +231,12 @@ async function beamSearchProgression(
 
 function detectCadences(chords: ChordSymbol[]): Array<{
   position: number;
-  end_index: number;
-  type: string;
+  type: 'perfect' | 'half' | 'deceptive' | 'plagal' | 'tritone_sub' | 'backdoor';
   strength: number;
 }> {
   const cadences: Array<{
     position: number;
-    end_index: number;
-    type: string;
+    type: 'perfect' | 'half' | 'deceptive' | 'plagal' | 'tritone_sub' | 'backdoor';
     strength: number;
   }> = [];
 
@@ -249,28 +247,24 @@ function detectCadences(chords: ChordSymbol[]): Array<{
     if (from.function === 'D' && to.function === 'T') {
       cadences.push({
         position: i,
-        end_index: i + 1,
         type: 'perfect',
         strength: 1.0,
       });
     } else if (from.function === 'PD' && to.function === 'D') {
       cadences.push({
         position: i,
-        end_index: i + 1,
         type: 'half',
         strength: 0.6,
       });
     } else if (from.function === 'D' && to.function === 'PD') {
       cadences.push({
         position: i,
-        end_index: i + 1,
         type: 'deceptive',
         strength: 0.7,
       });
     } else if (from.function === 'PD' && to.function === 'T') {
       cadences.push({
         position: i,
-        end_index: i + 1,
         type: 'plagal',
         strength: 0.5,
       });

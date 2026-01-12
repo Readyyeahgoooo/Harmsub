@@ -15,7 +15,7 @@ export interface TensionLegality {
   chord_quality: ChordQuality;
   legal_tensions: number[]; // scale degrees (relative to root)
   avoid_notes: number[];
-  tension_type: Record<number, TensionType>;
+  tension_type: Record<string | number, TensionType>;
   style_specific_rules?: {
     style: string;
     additional_tensions: number[];

@@ -153,7 +153,7 @@ const CANDIDATE_RULES: CandidateRule[] = [
     description: 'Creates intentional upper-structure (neo-soul/jazz)',
     test: (chord, slot) => {
       // Check if chord supports upper-structure harmony
-      return chord.extensions.includes(9) || chord.extensions.includes(11);
+      return chord.extensions.includes('9') || chord.extensions.includes('11');
     },
   },
 ];

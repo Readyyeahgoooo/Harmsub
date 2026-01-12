@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { Sliders, Music, Zap, Layers } from 'lucide-react';
 import {
   HarmonizationControls,
-  StylePackName,
   VoicingPresetName,
 } from '@/types/rulebook';
+import { StylePackName } from '@/types/harmonyTypes';
 import {
   getStylePack,
   getStylePackDisplayName,

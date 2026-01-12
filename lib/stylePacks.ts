@@ -80,3 +80,76 @@ export const STYLE_PACKS: Record<StylePackName, StylePack> = {
         preferredVoicing: 'clear' // Or cinematic logic
     }
 };
+
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+export function getStylePack(name: StylePackName): StylePack {
+  return STYLE_PACKS[name];
+}
+
+export function getStylePackDisplayName(name: StylePackName): string {
+  return STYLE_PACKS[name]?.displayName || name;
+}
+
+export function getStylePackNames(): StylePackName[] {
+  return Object.keys(STYLE_PACKS) as StylePackName[];
+}
+
+export interface DefaultControls {
+  distance: number;
+  functional_clarity: number;
+  dominant_density: 'low' | 'medium' | 'high';
+  alteration_amount: 'none' | 'light' | 'moderate' | 'heavy';
+}
+
+export function getDefaultControlsForStyle(style: StylePackName): DefaultControls {
+  const pack = STYLE_PACKS[style];
+  
+  switch (style) {
+    case 'jazz':
+      return {
+        distance: 3,
+        functional_clarity: 0.8,
+        dominant_density: 'high',
+        alteration_amount: 'moderate',
+      };
+    case 'bossa':
+      return {
+        distance: 2,
+        functional_clarity: 0.7,
+        dominant_density: 'medium',
+        alteration_amount: 'light',
+      };
+    case 'pop':
+      return {
+        distance: 1,
+        functional_clarity: 0.9,
+        dominant_density: 'low',
+        alteration_amount: 'none',
+      };
+    case 'radiohead':
+      return {
+        distance: 4,
+        functional_clarity: 0.5,
+        dominant_density: 'low',
+        alteration_amount: 'moderate',
+      };
+    case 'classical':
+      return {
+        distance: 1,
+        functional_clarity: 1.0,
+        dominant_density: 'medium',
+        alteration_amount: 'none',
+      };
+    default:
+      return {
+        distance: 2,
+        functional_clarity: 0.7,
+        dominant_density: 'medium',
+        alteration_amount: 'light',
+      };
+  }
+}
