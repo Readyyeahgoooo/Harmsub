@@ -83,12 +83,14 @@ export default function Home() {
         const midi = new Midi(arrayBuffer);
 
         const melodyNotes: Note[] = [];
-        midi.tracks.forEach(track => {
-          track.notes.forEach(note => {
+        midi.tracks.forEach((track: { notes: Array<{ name: string; octave: number; midi: number; duration: number; time: number }> }) => {
+          track.notes.forEach((note) => {
+            // Calculate frequency from MIDI note number: f = 440 * 2^((n-69)/12)
+            const frequency = 440 * Math.pow(2, (note.midi - 69) / 12);
             melodyNotes.push({
               name: `${note.name}${note.octave}`,
               octave: note.octave,
-              frequency: note.frequency,
+              frequency: frequency,
               duration: note.duration,
               startTime: note.time
             });
