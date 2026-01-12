@@ -227,7 +227,7 @@ export default function Home() {
     });
 
     const midiData = midi.toArray();
-    const blob = new Blob([midiData], { type: 'audio/midi' });
+    const blob = new Blob([midiData.buffer.slice(midiData.byteOffset, midiData.byteOffset + midiData.byteLength)], { type: 'audio/midi' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
