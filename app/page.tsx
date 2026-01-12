@@ -6,22 +6,19 @@ import VirtualPiano from '@/components/VirtualPiano';
 import AudioRecorder from '@/components/AudioRecorder';
 import FileUploader from '@/components/FileUploader';
 import YouTubeAnalyzer from '@/components/YouTubeAnalyzer';
-import ChordProgressionDisplay from '@/components/ChordProgressionDisplay';
 import HarmonizationResults from '@/components/HarmonizationResults';
 import HarmonyControls from '@/components/HarmonyControls';
-import { Note, ChordProgression, Melody, HarmonizationResult } from '@/types';
-import { HarmonizationOutput, HarmonicDistance, StylePackName, VoicingStyle } from '@/types/harmonyTypes';
+import { Note, HarmonizationResult } from '@/types';
+import { HarmonicDistance, StylePackName, VoicingStyle } from '@/types/harmonyTypes';
 import { Harmonizer } from '@/lib/harmonizer';
-import { noteToFrequency, generateChordProgression, romanToChord, numberToNote } from '@/lib/musicTheory';
+import { noteToFrequency, numberToNote } from '@/lib/musicTheory';
 import { Midi } from '@tonejs/midi';
 
 export default function Home() {
   const [inputMethod, setInputMethod] = useState<'piano' | 'audio' | 'file' | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedNotes, setRecordedNotes] = useState<Note[]>([]);
-  const [detectedNotes, setDetectedNotes] = useState<Array<{ note: string; time: number }>>([]);
   const [youtubeVideoId, setYoutubeVideoId] = useState('');
-  const [referenceChordProgression, setReferenceChordProgression] = useState<ChordProgression | null>(null);
   const [harmonizationResults, setHarmonizationResults] = useState<HarmonizationResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -34,12 +31,16 @@ export default function Home() {
   const handlePianoRecordStart = () => {
     setIsRecording(true);
     setRecordedNotes([]);
-    setCurrentStep(2);
+    setInputMethod('piano');
+    // Stay on step 1 while recording - don't advance yet
   };
 
   const handlePianoRecordStop = () => {
     setIsRecording(false);
-    setCurrentStep(3);
+    // Only advance to step 2 (reference track) after recording is done
+    if (recordedNotes.length > 0) {
+      setCurrentStep(2);
+    }
   };
 
   const handlePianoNotePlayed = (note: string, duration: number) => {
@@ -56,13 +57,12 @@ export default function Home() {
     setRecordedNotes(prev => [...prev, newNote]);
   };
 
-  const handleAudioRecorded = (audioBlob: Blob) => {
-    setCurrentStep(3);
+  const handleAudioRecorded = (_audioBlob: Blob) => {
+    setInputMethod('audio');
+    setCurrentStep(2);
   };
 
   const handleNotesDetected = (notes: Array<{ note: string; time: number }>) => {
-    setDetectedNotes(notes);
-
     const melodyNotes: Note[] = notes.map((note, index) => ({
       name: note.note,
       octave: parseInt(note.note.match(/\d+/)?.[0] || '4'),
@@ -76,6 +76,7 @@ export default function Home() {
 
   const handleFileUploaded = async (file: File, type: 'midi' | 'xml' | 'logic' | 'audio') => {
     setIsLoading(true);
+    setInputMethod('file');
 
     try {
       if (type === 'midi') {
@@ -104,7 +105,7 @@ export default function Home() {
         alert('XML and Logic files would be parsed here.');
       }
 
-      setCurrentStep(3);
+      setCurrentStep(2);
     } catch (error) {
       console.error('Error processing file:', error);
       alert('Error processing file. Please try again.');
@@ -113,9 +114,9 @@ export default function Home() {
     }
   };
 
-  const handleYouTubeAnalyzed = (videoId: string, title: string) => {
+  const handleYouTubeAnalyzed = (videoId: string, _title: string) => {
     setYoutubeVideoId(videoId);
-    setCurrentStep(3);
+    // Don't advance step - user can click "Continue with Reference" button
   };
 
   const generateHarmonizations = () => {
@@ -366,17 +367,59 @@ export default function Home() {
           </Tabs>
         )}
 
-        {currentStep === 2 && inputMethod === 'piano' && (
-          <div className="flex flex-col items-center gap-4">
-            <VirtualPiano
-              onNotePlayed={handlePianoNotePlayed}
-              onRecordStart={handlePianoRecordStart}
-              onRecordStop={handlePianoRecordStop}
-              isRecording={isRecording}
-            />
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Notes recorded: {recordedNotes.length}
-            </p>
+        {currentStep === 2 && (
+          <div className="space-y-8">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
+                Reference Track (Optional)
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                Analyze a YouTube video for chord progression reference, or skip to generate harmonizations
+              </p>
+            </div>
+
+            {recordedNotes.length > 0 && (
+              <div className="text-center p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg max-w-2xl mx-auto">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">
+                  ✓ Melody Recorded ({recordedNotes.length} notes)
+                </h3>
+                <div className="flex flex-wrap justify-center gap-2 mb-4">
+                  {recordedNotes.slice(0, 12).map((note, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium"
+                    >
+                      {note.name}
+                    </span>
+                  ))}
+                  {recordedNotes.length > 12 && (
+                    <span className="px-3 py-1 text-gray-500 dark:text-gray-400 text-sm">
+                      +{recordedNotes.length - 12} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="max-w-2xl mx-auto">
+              <YouTubeAnalyzer onAnalyzed={handleYouTubeAnalyzed} />
+            </div>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setCurrentStep(1)}
+                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-full font-medium transition-all"
+              >
+                ← Back to Input
+              </button>
+              <button
+                onClick={() => setCurrentStep(3)}
+                disabled={recordedNotes.length === 0}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {youtubeVideoId ? 'Continue with Reference →' : 'Skip Reference →'}
+              </button>
+            </div>
           </div>
         )}
 
