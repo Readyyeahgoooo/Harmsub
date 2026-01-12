@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Slider, Music, Zap, Layers } from 'lucide-react';
+import { Sliders, Music, Zap, Layers } from 'lucide-react';
 import {
   HarmonizationControls,
   StylePackName,
@@ -193,11 +193,10 @@ export default function HarmonizationControlsUI({
             <button
               key={length}
               onClick={() => updateControl('loop_length', length)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                localControls.loop_length === length
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${localControls.loop_length === length
                   ? 'bg-purple-600 text-white'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
+                }`}
             >
               {length} bars
             </button>
@@ -238,11 +237,10 @@ export default function HarmonizationControlsUI({
               <button
                 key={density}
                 onClick={() => updateControl('dominant_density', density as any)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
-                  localControls.dominant_density === density
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${localControls.dominant_density === density
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 {density}
               </button>
@@ -260,11 +258,10 @@ export default function HarmonizationControlsUI({
               <button
                 key={amount}
                 onClick={() => updateControl('borrowed_amount', amount as any)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
-                  localControls.borrowed_amount === amount
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${localControls.borrowed_amount === amount
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 {amount}
               </button>
@@ -282,11 +279,10 @@ export default function HarmonizationControlsUI({
               <button
                 key={amount}
                 onClick={() => updateControl('alteration_amount', amount as any)}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
-                  localControls.alteration_amount === amount
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${localControls.alteration_amount === amount
                     ? 'bg-purple-600 text-white'
                     : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
+                  }`}
               >
                 {amount}
               </button>
