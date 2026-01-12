@@ -1,150 +1,75 @@
-# Harmsub - AI-Powered Music Harmonization
+# Harmsub - AI-Powered Harmony Substitution
 
-A comprehensive web application for music harmonization that allows users to analyze reference tracks, generate chord variations, and harmonize their melodies.
+A comprehensive music harmonization app that analyzes reference tracks, generates chord progression variations, and applies harmonic progressions to user melodies.
 
 ## Features
 
-### 1. **Multiple Input Methods**
-- **Virtual Piano**: Play and record your melody on a 3-octave piano
-- **Live Audio Recording**: Record your melody live (up to 1 minute) with automatic pitch detection
-- **File Upload**: Upload MIDI, MusicXML, Logic, or audio files
-- **YouTube Analysis**: Paste YouTube links to analyze chord structures
+### 🎹 Multiple Input Methods
+- **Virtual Piano**: 3-octave keyboard for melody input
+- **Audio Recording**: Live microphone recording with pitch detection (1 min limit)
+- **File Upload**: MIDI, MusicXML, Logic, and audio file support
+- **YouTube Analysis**: AI-powered chord extraction from YouTube videos
 
-### 2. **Intelligent Harmonization**
-- Analyze reference track chord progressions
-- Generate multiple harmonic variations
-- AI-powered chord suggestions for your melody
+### 🎵 Comprehensive Harmony Engine
+Based on the "Chord Generator Rulebook v1.0":
 
-### 3. **Export Options**
-- Export harmonized results as MIDI files
-- Play back generated harmonizations directly in the browser
-- Download for use in your DAW
+- **Chord Object Model**: Full representation with root, quality, extensions, alterations, bass notes
+- **Scale/Mode System**: Major, minor, harmonic/melodic minor, all modes with tension legality tables
+- **Functional Harmony**: T (Tonic), PD (Predominant), D (Dominant) classification with grammar rules
+- **7-Level Distance Ladder**: From diatonic (0) to atonal (6)
+- **Substitution Ladders**: Ranked substitutions for tonic, predominant, and dominant functions
+- **Progression Engines**: Functional graph, circle-of-fifths, cadence insertion, template expansion
+- **Scoring System**: Chord fit, transition, voice-leading, and distance penalty scoring
+- **Voicing Engine**: 7 presets (Clear/Spacious, Rootless A/B, Quartal, Neo-soul, SATB, Cinematic)
 
-## Tech Stack
+### 🎨 Style Packs
+- Jazz (complex harmonies, altered dominants)
+- Bossa Nova (smooth ii-V movements)
+- Pop (simple, catchy progressions)
+- Radiohead-ish (modal, chromatic mediants)
+- Classical (functional, SATB voicing)
+- Cinematic (epic, wide voicings)
+- Neo-Soul (rich extensions, gospel influences)
+- R&B (smooth 7ths and 9ths)
 
-- **Next.js 16** with App Router
-- **TypeScript** for type safety
-- **Tailwind CSS** for styling
-- **Tone.js** for audio processing
-- **@tonejs/midi** for MIDI file handling
-- **Pitchfinder** for pitch detection
-- **React Dropzone** for file uploads
-- **Lucide React** for icons
-- **Radix UI** for UI components
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ installed
-- npm or yarn package manager
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/Readyyeahgoooo/Harmsub.git
-cd Harmsub
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Run the development server:
-```bash
-npm run dev
-```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Usage
-
-### Step 1: Input Your Melody
-Choose one of four input methods:
-- **Piano Tab**: Click the virtual piano keys to play notes, then press "Record Melody" to start recording
-- **Audio Tab**: Click "Start Recording" and sing or play your melody
-- **File Tab**: Drag and drop your MIDI, XML, Logic, or audio file
-- **YouTube Tab**: Paste a YouTube link to analyze a reference track
-
-### Step 2: Analyze Reference Track (Optional)
-If you uploaded a YouTube link, the app will analyze the chord structure and provide a progression template.
-
-### Step 3: Generate Harmonizations
-Click "Generate Harmonizations" to create multiple chord progression variations based on your melody and the reference analysis.
-
-### Step 4: Export Results
-- Click "Play" to hear the harmonization
-- Click "Export MIDI" to download the file for use in your DAW
+### 🤖 AI Integration
+- OpenRouter API with free models (DeepSeek → GLM → Gemini fallback)
+- Rate limiting (20/hour, 100/day)
+- YouTube chord extraction
+- Melody-to-chord suggestions
 
 ## Deployment
 
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Go to [Vercel](https://vercel.com) and sign in
-3. Click "Add New Project" and import your repository
-4. Vercel will automatically detect Next.js and configure the build
-5. Click "Deploy" and wait for the deployment to complete
-
 ### Environment Variables
-
-No environment variables are required for basic functionality.
-
-## Project Structure
-
+Set the following in Vercel:
 ```
-harmsub/
-├── app/
-│   ├── layout.tsx          # Root layout
-│   ├── page.tsx            # Main application page
-│   └── globals.css         # Global styles
-├── components/
-│   ├── ui/                 # UI components (Radix UI)
-│   │   └── tabs.tsx
-│   ├── VirtualPiano.tsx    # Virtual piano component
-│   ├── AudioRecorder.tsx   # Audio recording component
-│   ├── FileUploader.tsx    # File upload component
-│   ├── YouTubeAnalyzer.tsx # YouTube analysis component
-│   ├── ChordProgressionDisplay.tsx
-│   └── HarmonizationResults.tsx
-├── lib/
-│   ├── musicTheory.ts      # Music theory utilities
-│   └── utils.ts            # Utility functions
-└── types/
-    └── index.ts            # TypeScript type definitions
+NEXT_PUBLIC_OPENROUTER_API_KEY=your_openrouter_api_key
 ```
 
-## Future Enhancements
+### Deploy to Vercel
+1. Connect your GitHub repository to Vercel
+2. Add the environment variable above
+3. Deploy!
 
-- Integration with Chord AI API for accurate chord detection
-- Support for more file formats (ABC notation, Guitar Pro, etc.)
-- Real-time MIDI input from external keyboards
-- Advanced chord progression algorithms
-- Machine learning models for better harmonization
-- Cloud storage for saved projects
-- Collaboration features for sharing harmonizations
+## Local Development
 
-## Contributing
+```bash
+# Install dependencies
+npm install
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Tech Stack
+- Next.js 16 with App Router
+- TypeScript
+- Tailwind CSS
+- Tone.js / @tonejs/midi for audio
+- OpenRouter AI API
 
 ## License
-
-MIT License - feel free to use this project for personal or commercial purposes.
-
-## Acknowledgments
-
-- Tone.js for audio synthesis
-- @tonejs/midi for MIDI file handling
-- Radix UI for beautiful, accessible components
-- Next.js team for the amazing framework
-
-## Contact
-
-For questions or suggestions, please open an issue on GitHub.
-
----
-
-Made with ❤️ for musicians everywhere
+MIT
