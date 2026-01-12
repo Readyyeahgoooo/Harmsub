@@ -164,6 +164,7 @@ export default function Home() {
           mappedChords.forEach((c, i) => c.startTime = i * 2);
 
           results.push({
+            id: `harmonization-${keyRoot}-${Date.now()}`,
             originalMelody: {
               notes: recordedNotes,
               duration: recordedNotes.length * 0.5 // Approx
@@ -172,7 +173,16 @@ export default function Home() {
               chords: mappedChords,
               key: numberToNote(keyRoot),
               timeSignature: '4/4'
-            }
+            },
+            score: {
+              chordFit: 0.8,
+              transition: 0.7,
+              voiceLeading: 0.75,
+              distancePenalty: harmonicDistance * 0.1,
+              total: 0.75
+            },
+            voicing: voicingStyle,
+            style: styleName
           });
         });
 
