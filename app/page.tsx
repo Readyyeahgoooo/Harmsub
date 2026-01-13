@@ -6,12 +6,14 @@ import VirtualPiano from '@/components/VirtualPiano';
 import AudioRecorder from '@/components/AudioRecorder';
 import FileUploader from '@/components/FileUploader';
 import YouTubeChordAnalyzer from '@/components/YouTubeChordAnalyzer';
+import ReferenceTrackAnalyzer from '@/components/ReferenceTrackAnalyzer';
 import HarmonizationResults from '@/components/HarmonizationResults';
 import HarmonyControls from '@/components/HarmonyControls';
 import { Note, HarmonizationResult } from '@/types';
 import { ReferenceAnalysis, ReferenceChord } from '@/types/referenceTypes';
-import { HarmonicDistance, StylePackName, VoicingStyle } from '@/types/harmonyTypes';
+import { HarmonicDistance, StylePackName, VoicingStyle, ReferenceInfluence } from '@/types/harmonyTypes';
 import { Harmonizer } from '@/lib/harmonizer';
+import { parseReferenceChords, detectKeyFromChords } from '@/lib/referenceInfluence';
 import { noteToFrequency, numberToNote } from '@/lib/musicTheory';
 import { Midi } from '@tonejs/midi';
 
@@ -123,9 +125,19 @@ export default function Home() {
     // Don't advance step - user can click "Continue with Reference" button
   };
 
-  const handleChordsSelected = (chords: ReferenceChord[], _applyMode: 'modulate' | 'substitute' | 'inspire') => {
+  const handleReferenceAnalyzed = (analysis: ReferenceAnalysis) => {
+    setReferenceAnalysis(analysis);
+    if (analysis.videoId) {
+      setYoutubeVideoId(analysis.videoId);
+    }
+  };
+
+  // Store the apply mode for reference chords
+  const [referenceApplyMode, setReferenceApplyMode] = useState<'modulate' | 'substitute' | 'inspire'>('inspire');
+
+  const handleChordsSelected = (chords: ReferenceChord[], applyMode: 'modulate' | 'substitute' | 'inspire') => {
     setSelectedReferenceChords(chords);
-    // The apply mode can be used in generateHarmonizations to influence the output
+    setReferenceApplyMode(applyMode);
   };
 
   const generateHarmonizations = () => {
@@ -137,7 +149,7 @@ export default function Home() {
         const results: HarmonizationResult[] = [];
 
         // Settings object
-        const settings = {
+        const settings: Parameters<typeof Harmonizer.harmonize>[2] = {
           maxDistance: harmonicDistance,
           style: styleName,
           voicingStyle: voicingStyle,
@@ -146,6 +158,20 @@ export default function Home() {
           allowBorrowedChords: true,
           allowTritoneSubstitutions: true
         };
+
+        // Add reference influence if chords are selected
+        if (selectedReferenceChords.length > 0 && referenceAnalysis) {
+          const parsedChords = parseReferenceChords(selectedReferenceChords);
+          const sourceKey = detectKeyFromChords(parsedChords);
+          
+          settings.referenceInfluence = {
+            chords: parsedChords,
+            sourceKey,
+            applyMode: referenceApplyMode,
+            weight: referenceApplyMode === 'substitute' ? 0.8 : 
+                    referenceApplyMode === 'modulate' ? 0.6 : 0.4
+          };
+        }
 
         // Generate 3 variations (we can vary the key or settings slightly if we want multiple)
         // For now, let's just generate one main one and maybe some variations on key?
@@ -451,7 +477,7 @@ export default function Home() {
                 Reference Track (Optional)
               </h2>
               <p className="text-gray-600 dark:text-gray-400">
-                Analyze a YouTube video for chord progression reference, or skip to generate harmonizations
+                Upload audio or analyze a YouTube video to extract chord progressions as reference
               </p>
             </div>
 
@@ -479,11 +505,25 @@ export default function Home() {
             )}
 
             <div className="max-w-2xl mx-auto">
-              <YouTubeChordAnalyzer 
-                onAnalyzed={handleYouTubeAnalyzed} 
+              <ReferenceTrackAnalyzer 
+                onAnalyzed={handleReferenceAnalyzed} 
                 onChordsSelected={handleChordsSelected}
               />
             </div>
+
+            {/* Show reference analysis summary if available */}
+            {referenceAnalysis && (
+              <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg max-w-2xl mx-auto">
+                <p className="text-green-700 dark:text-green-300 font-medium">
+                  ✓ Reference analyzed: {referenceAnalysis.title} ({referenceAnalysis.key} {referenceAnalysis.mode})
+                </p>
+                {selectedReferenceChords.length > 0 && (
+                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                    {selectedReferenceChords.length} chord(s) selected for application
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-center gap-4">
               <button
@@ -497,7 +537,7 @@ export default function Home() {
                 disabled={recordedNotes.length === 0}
                 className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {youtubeVideoId ? 'Continue with Reference →' : 'Skip Reference →'}
+                {referenceAnalysis ? 'Continue with Reference →' : 'Skip Reference →'}
               </button>
             </div>
           </div>
@@ -556,13 +596,46 @@ export default function Home() {
               </div>
             )}
 
-            {youtubeVideoId && (
+            {youtubeVideoId && !selectedReferenceChords.length && (
               <div className="text-center p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
                 <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
                   Reference Track Analysis
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Video ID: {youtubeVideoId}
+                </p>
+              </div>
+            )}
+
+            {/* Reference Chords Applied Indicator */}
+            {selectedReferenceChords.length > 0 && referenceAnalysis && (
+              <div className="text-center p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg shadow-lg border border-purple-200 dark:border-purple-800">
+                <h3 className="text-xl font-semibold mb-3 text-purple-800 dark:text-purple-200">
+                  🎵 Reference Influence Active
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                  From: {referenceAnalysis.title} ({referenceAnalysis.key} {referenceAnalysis.mode})
+                </p>
+                <div className="flex flex-wrap justify-center gap-2 mb-3">
+                  {selectedReferenceChords.map((chord, index) => (
+                    <span
+                      key={index}
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        chord.function === 'T' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                        chord.function === 'D' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+                        chord.function === 'PD' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+                        'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200'
+                      }`}
+                    >
+                      {chord.name} ({chord.roman})
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-purple-600 dark:text-purple-400">
+                  Mode: {referenceApplyMode.charAt(0).toUpperCase() + referenceApplyMode.slice(1)} • 
+                  {referenceApplyMode === 'inspire' && ' Using as inspiration for similar progressions'}
+                  {referenceApplyMode === 'modulate' && ' Borrowing harmonic devices and patterns'}
+                  {referenceApplyMode === 'substitute' && ' Directly substituting transposed chords'}
                 </p>
               </div>
             )}

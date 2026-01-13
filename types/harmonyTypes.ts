@@ -138,6 +138,27 @@ export interface StylePack {
 }
 
 /**
+ * Reference chord from analyzed track
+ */
+export interface ReferenceChordInfo {
+    name: string;
+    roman: string;
+    function: 'T' | 'PD' | 'D' | 'AMB';
+    rootPc: number;  // 0-11 pitch class
+    quality: ChordQuality;
+}
+
+/**
+ * Reference track influence settings
+ */
+export interface ReferenceInfluence {
+    chords: ReferenceChordInfo[];
+    sourceKey: number;  // 0-11, key of the reference track
+    applyMode: 'inspire' | 'modulate' | 'substitute';
+    weight: number;  // 0-1, how much to weight reference influence
+}
+
+/**
  * Harmonization settings from UI
  */
 export interface HarmonizationSettings {
@@ -148,6 +169,7 @@ export interface HarmonizationSettings {
     allowSecondaryDominants: boolean;
     allowBorrowedChords: boolean;
     allowTritoneSubstitutions: boolean;
+    referenceInfluence?: ReferenceInfluence;  // Optional reference track influence
 }
 
 /**

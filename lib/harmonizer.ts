@@ -3,13 +3,19 @@ import {
     HarmonizationSettings,
     HarmonizationOutput,
     MelodyNote,
-    NOTE_NAMES
+    NOTE_NAMES,
+    ReferenceInfluence
 } from '../types/harmonyTypes';
 import { Note, ChordUI, ChordProgression } from '../types';
 import { generateCandidates } from './candidateEngine';
 import { findBestPath } from './progressionGraph';
 import { generateVoicing } from './voicingEngine';
 import { noteToNumber } from './musicTheory';
+import { 
+    scoreReferenceInfluence, 
+    parseReferenceChords, 
+    detectKeyFromChords 
+} from './referenceInfluence';
 
 // ============================================
 // MAIN SERVICE
@@ -48,7 +54,7 @@ export class Harmonizer {
         const chordSlots = this.segmentMelody(melodyNotes);
         const candidateGrid: ChordCandidate[][] = [];
 
-        chordSlots.forEach(slot => {
+        chordSlots.forEach((slot, slotIndex) => {
             // Find the most prominent note in this slot to harmonize
             // Or harmonize against all notes in the slot?
             // `generateCandidates` takes a single note.
@@ -60,6 +66,28 @@ export class Harmonizer {
                 keyRoot,
                 settings.maxDistance
             );
+
+            // Apply reference influence if available
+            if (settings.referenceInfluence && settings.referenceInfluence.chords.length > 0) {
+                const refInfluence = settings.referenceInfluence;
+                const totalSlots = chordSlots.length;
+                
+                candidates.forEach(candidate => {
+                    const refBonus = scoreReferenceInfluence(
+                        candidate,
+                        refInfluence,
+                        keyRoot,
+                        slotIndex,
+                        totalSlots
+                    );
+                    // Add reference bonus to the candidate's score
+                    candidate.score += refBonus * 0.3; // Weight the reference influence
+                    candidate.melodyFitScore = candidate.melodyFitScore * 0.7 + refBonus * 0.3;
+                });
+
+                // Re-sort candidates after applying reference influence
+                candidates.sort((a, b) => b.score - a.score);
+            }
 
             // Filter/Adjust candidates based on other notes in the slot?
             // (TODO: Advanced feature)
