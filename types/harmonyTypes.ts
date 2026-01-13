@@ -115,6 +115,7 @@ export interface VoicingConfig {
  */
 export interface VoicedChord {
     chord: AdvancedChord;
+    romanChord?: RomanChord;          // Roman numeral representation
     leftHand: number[];               // MIDI note numbers
     rightHand: number[];              // MIDI note numbers
     allNotes: number[];               // Combined

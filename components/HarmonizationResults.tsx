@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { HarmonizationResult } from '@/types';
-import { Download, Play, Music, TrendingUp } from 'lucide-react';
+import { Download, Play, Music, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface HarmonizationResultsProps {
   results: HarmonizationResult[];
@@ -9,12 +10,19 @@ interface HarmonizationResultsProps {
   onPlay?: (index: number) => void;
 }
 
-// Function color mapping
+// Function color mapping - matching the original app's color scheme
 const FUNCTION_COLORS: Record<string, string> = {
-  T: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-300',
-  PD: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-300',
-  D: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-300',
-  AMB: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-300',
+  T: 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 border-green-400',
+  PD: 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-200 border-yellow-400',
+  D: 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200 border-red-400',
+  AMB: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-400',
+};
+
+const FUNCTION_LABELS: Record<string, string> = {
+  T: 'Tonic',
+  PD: 'Predom',
+  D: 'Dom',
+  AMB: '',
 };
 
 export default function HarmonizationResults({
@@ -22,6 +30,15 @@ export default function HarmonizationResults({
   onExportMIDI,
   onPlay
 }: HarmonizationResultsProps) {
+  const [expandedVoicings, setExpandedVoicings] = useState<Record<number, boolean>>({});
+
+  const toggleVoicing = (index: number) => {
+    setExpandedVoicings(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
   return (
     <div className="space-y-6">
       {results.map((result, index) => (
@@ -49,7 +66,7 @@ export default function HarmonizationResults({
                 {onPlay && (
                   <button
                     onClick={() => onPlay(index)}
-                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-all flex items-center gap-2"
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-full font-medium transition-all flex items-center gap-2"
                   >
                     <Play className="w-4 h-4" />
                     Play
@@ -58,7 +75,7 @@ export default function HarmonizationResults({
                 {onExportMIDI && (
                   <button
                     onClick={() => onExportMIDI(index)}
-                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-all flex items-center gap-2"
+                    className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-medium transition-all flex items-center gap-2"
                   >
                     <Download className="w-4 h-4" />
                     MIDI
@@ -74,19 +91,19 @@ export default function HarmonizationResults({
               <Music className="w-4 h-4" />
               Chord Progression
             </h4>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {result.suggestedChords.chords.map((chord, chordIndex) => (
                 <div
                   key={chordIndex}
-                  className={`px-4 py-2 rounded-lg border ${FUNCTION_COLORS[chord.function || 'AMB']} flex flex-col items-center min-w-[80px]`}
+                  className={`px-4 py-3 rounded-lg border-2 ${FUNCTION_COLORS[chord.function || 'AMB']} flex flex-col items-center min-w-[90px] transition-all hover:scale-105`}
                 >
                   <span className="font-bold text-lg">{chord.name}</span>
                   {chord.roman && (
-                    <span className="text-xs opacity-75">{chord.roman}</span>
+                    <span className="text-xs opacity-80 mt-0.5">{chord.roman}</span>
                   )}
-                  {chord.function && (
-                    <span className="text-xs mt-1 opacity-60">
-                      {chord.function === 'T' ? 'Tonic' : chord.function === 'PD' ? 'Predom' : chord.function === 'D' ? 'Dom' : ''}
+                  {chord.function && FUNCTION_LABELS[chord.function] && (
+                    <span className="text-xs mt-1 opacity-60 font-medium">
+                      {FUNCTION_LABELS[chord.function]}
                     </span>
                   )}
                 </div>
@@ -109,24 +126,43 @@ export default function HarmonizationResults({
             </div>
           </div>
 
-          {/* Voicing Details */}
+          {/* Voicing Details - Collapsible */}
           {result.suggestedChords.chords.length > 0 && (
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-              <details className="group">
-                <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-purple-600">
+            <div className="border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => toggleVoicing(index)}
+                className="w-full p-4 flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  {expandedVoicings[index] ? (
+                    <ChevronUp className="w-4 h-4 text-purple-500" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-purple-500" />
+                  )}
                   View Voicing Details
-                </summary>
-                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {result.suggestedChords.chords.slice(0, 8).map((chord, i) => (
-                    <div key={i} className="text-xs bg-gray-100 dark:bg-gray-800 rounded p-2">
-                      <div className="font-medium text-gray-800 dark:text-gray-200">{chord.name}</div>
-                      <div className="text-gray-500 dark:text-gray-400 mt-1">
+                </span>
+                <span className="text-xs text-gray-500">
+                  {result.suggestedChords.chords.length} chords
+                </span>
+              </button>
+              
+              {expandedVoicings[index] && (
+                <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {result.suggestedChords.chords.map((chord, i) => (
+                    <div 
+                      key={i} 
+                      className={`text-sm rounded-lg p-3 border ${FUNCTION_COLORS[chord.function || 'AMB']}`}
+                    >
+                      <div className="font-semibold text-gray-800 dark:text-gray-200">
+                        {chord.name}
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-2 font-mono">
                         {chord.notes.join(', ')}
                       </div>
                     </div>
                   ))}
                 </div>
-              </details>
+              )}
             </div>
           )}
         </div>
@@ -134,18 +170,18 @@ export default function HarmonizationResults({
 
       {/* Legend */}
       <div className="p-4 bg-white dark:bg-gray-900 rounded-lg shadow">
-        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Function Legend</h4>
-        <div className="flex flex-wrap gap-4 text-sm">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Function Legend</h4>
+        <div className="flex flex-wrap gap-6 text-sm">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-500"></div>
+            <div className="w-4 h-4 rounded bg-green-400 border border-green-500"></div>
             <span className="text-gray-600 dark:text-gray-400">Tonic (T) - Home/Rest</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-yellow-500"></div>
+            <div className="w-4 h-4 rounded bg-yellow-400 border border-yellow-500"></div>
             <span className="text-gray-600 dark:text-gray-400">Predominant (PD) - Tension Builder</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-red-500"></div>
+            <div className="w-4 h-4 rounded bg-red-400 border border-red-500"></div>
             <span className="text-gray-600 dark:text-gray-400">Dominant (D) - Wants Resolution</span>
           </div>
         </div>

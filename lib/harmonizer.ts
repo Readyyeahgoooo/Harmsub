@@ -70,9 +70,9 @@ export class Harmonizer {
         // 3. Find Best Path (Progression Logic)
         const bestPath = findBestPath(candidateGrid, settings.style);
 
-        // 4. Voice the Chords
+        // 4. Voice the Chords (pass roman chord through for display)
         const voicedChords = bestPath.map(candidate =>
-            generateVoicing(candidate.chord, settings.voicingStyle)
+            generateVoicing(candidate.chord, settings.voicingStyle, candidate.romanChord)
         );
 
         // 5. Construct Output

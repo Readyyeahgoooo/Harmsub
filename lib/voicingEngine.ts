@@ -3,6 +3,7 @@ import {
     VoicedChord,
     VoicingStyle,
     VoicingConfig,
+    RomanChord,
     EXTENSION_INTERVALS,
     CHORD_QUALITY_INTERVALS,
     NOTE_NAMES
@@ -66,7 +67,8 @@ const VOICING_PRESETS: Record<VoicingStyle, VoicingConfig> = {
 
 export function generateVoicing(
     chord: AdvancedChord,
-    style: VoicingStyle = 'clear'
+    style: VoicingStyle = 'clear',
+    romanChord?: RomanChord
 ): VoicedChord {
     const config = VOICING_PRESETS[style];
     let leftHand: number[] = [];
@@ -99,25 +101,46 @@ export function generateVoicing(
     const thirds = getChordTone(rootMidi, chord.quality, 3);
     if (thirds) rightHand.push(thirds + 60);
 
-    // Add extensions
+    // Add 5th for richer voicing
+    const fifth = getChordTone(rootMidi, chord.quality, 5);
+    if (fifth && config.preferOpenVoicing) {
+        rightHand.push(fifth + 60);
+    }
+
+    // Add extensions for richer chords
     chord.extensions.forEach(ext => {
         const interval = EXTENSION_INTERVALS[ext];
         if (interval) {
-            rightHand.push(rootMidi + 48 + interval);
+            // Place extensions in appropriate octave
+            const extNote = rootMidi + 48 + interval;
+            // Normalize to right hand range
+            const normalizedNote = extNote > 84 ? extNote - 12 : extNote;
+            rightHand.push(normalizedNote);
+        }
+    });
+
+    // Add alterations for color
+    chord.alterations.forEach(alt => {
+        const interval = EXTENSION_INTERVALS[alt as keyof typeof EXTENSION_INTERVALS];
+        if (interval) {
+            rightHand.push(rootMidi + 60 + interval);
         }
     });
 
     // Neo-soul clusters
-    if (config.allowClusters && chord.quality.includes('9')) {
-        // Add 2nd/9th close to 3rd
-        rightHand.push(rootMidi + 60 + 2);
+    if (config.allowClusters && (chord.extensions.includes('9') || chord.quality.includes('9'))) {
+        // Add 2nd/9th close to 3rd for cluster effect
+        if (!rightHand.includes(rootMidi + 60 + 2)) {
+            rightHand.push(rootMidi + 60 + 2);
+        }
     }
 
     // Clean up and sort
-    const allNotes = [...leftHand, ...rightHand].sort((a, b) => a - b);
+    const allNotes = [...new Set([...leftHand, ...rightHand])].sort((a, b) => a - b);
 
     return {
         chord,
+        romanChord,
         leftHand,
         rightHand,
         allNotes,
