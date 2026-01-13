@@ -408,24 +408,39 @@ export default function Home() {
 
         <div className="mb-8">
           <div className="flex items-center justify-center gap-4">
-            {[1, 2, 3, 4].map((step) => (
-              <div key={step} className="flex items-center">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${currentStep >= step
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+            {[1, 2, 3, 4].map((step) => {
+              // Determine if step is clickable (can go back to completed steps)
+              const isClickable = step < currentStep || (step === currentStep);
+              const isCompleted = currentStep > step;
+              
+              return (
+                <div key={step} className="flex items-center">
+                  <button
+                    onClick={() => isClickable && setCurrentStep(step)}
+                    disabled={!isClickable}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
+                      currentStep >= step
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    } ${
+                      isClickable && step !== currentStep
+                        ? 'hover:ring-2 hover:ring-purple-400 hover:ring-offset-2 cursor-pointer'
+                        : ''
+                    } ${
+                      !isClickable ? 'cursor-not-allowed opacity-60' : ''
                     }`}
-                >
-                  {step}
+                    title={isClickable ? `Go to Step ${step}` : `Complete previous steps first`}
+                  >
+                    {isCompleted ? '✓' : step}
+                  </button>
+                  {step < 4 && (
+                    <div
+                      className={`w-16 h-1 ml-2 ${currentStep > step ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'}`}
+                    />
+                  )}
                 </div>
-                {step < 4 && (
-                  <div
-                    className={`w-16 h-1 ml-2 ${currentStep > step ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-700'
-                      }`}
-                  />
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="flex justify-center gap-12 mt-4 text-sm">
             <span className="text-gray-600 dark:text-gray-400">Input Melody</span>
@@ -467,6 +482,18 @@ export default function Home() {
             <TabsContent value="youtube" className="flex justify-center">
               <YouTubeChordAnalyzer onAnalyzed={handleYouTubeAnalyzed} />
             </TabsContent>
+
+            {/* Step 1 Navigation */}
+            {recordedNotes.length > 0 && !isRecording && (
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={() => setCurrentStep(2)}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full font-medium transition-all"
+                >
+                  Continue to Reference Track →
+                </button>
+              </div>
+            )}
           </Tabs>
         )}
 
@@ -556,7 +583,13 @@ export default function Home() {
               />
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setCurrentStep(2)}
+                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-full font-medium transition-all"
+              >
+                ← Back to Reference
+              </button>
               <button
                 onClick={generateHarmonizations}
                 disabled={isLoading || recordedNotes.length === 0}
@@ -649,6 +682,35 @@ export default function Home() {
               onExportMIDI={handleExportMIDI}
               onPlay={handlePlay}
             />
+
+            {/* Step 4 Navigation */}
+            <div className="flex justify-center gap-4 pt-4">
+              <button
+                onClick={() => setCurrentStep(3)}
+                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-full font-medium transition-all"
+              >
+                ← Back to Settings
+              </button>
+              <button
+                onClick={() => setCurrentStep(2)}
+                className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-full font-medium transition-all"
+              >
+                ← Change Reference
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentStep(1);
+                  setRecordedNotes([]);
+                  setHarmonizationResults([]);
+                  setReferenceAnalysis(null);
+                  setSelectedReferenceChords([]);
+                  setYoutubeVideoId('');
+                }}
+                className="px-6 py-3 bg-purple-100 dark:bg-purple-900 hover:bg-purple-200 dark:hover:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full font-medium transition-all"
+              >
+                🔄 Start Over
+              </button>
+            </div>
           </div>
         )}
       </div>
