@@ -109,7 +109,8 @@ export default function YouTubeChordAnalyzer({ onAnalyzed, onChordsSelected }: Y
         setAnalysis(analysisResult);
         onAnalyzed(extractedId, title, analysisResult);
       } else {
-        setError(data.error || 'Analysis failed. Please try again.');
+        const errorMsg = data.error || 'Analysis failed. Please try again.';
+        setError(errorMsg);
       }
     } catch (err) {
       console.error('Analysis error:', err);

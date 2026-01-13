@@ -1,6 +1,7 @@
 // API route for YouTube chord analysis using AI
 
 import { NextRequest, NextResponse } from 'next/server';
+import { SECURITY_CONFIG, rateLimiter, getClientIdentifier } from '@/lib/security';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
@@ -44,8 +45,78 @@ IMPORTANT: Return ONLY valid JSON in this exact format:
 
 export async function POST(request: NextRequest) {
   try {
+    // CORS protection
+    const origin = request.headers.get('origin');
+    const allowed = SECURITY_CONFIG.ALLOWED_ORIGINS.includes(origin || '');
+    if (!allowed && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: 'Origin not allowed' },
+        { status: 403 }
+      );
+    }
+
+    // Rate limiting
+    const clientIp = getClientIdentifier(request);
+    const minuteCheck = rateLimiter.perMinute.check(clientIp);
+    const hourCheck = rateLimiter.perHour.check(clientIp);
+
+    if (!minuteCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Too many requests. Please try again later.',
+          retryAfter: Math.ceil((minuteCheck.resetTime - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((minuteCheck.resetTime - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': String(minuteCheck.remaining),
+          }
+        }
+      );
+    }
+
+    if (!hourCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Hourly limit exceeded. Please try again later.',
+          retryAfter: Math.ceil((hourCheck.resetTime - Date.now()) / 1000)
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((hourCheck.resetTime - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': String(hourCheck.remaining),
+          }
+        }
+      );
+    }
+
+    // Request size limit
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > SECURITY_CONFIG.MAX_REQUEST_SIZE) {
+      return NextResponse.json(
+        { success: false, error: `Request too large. Maximum ${SECURITY_CONFIG.MAX_REQUEST_SIZE / 1024 / 1024}MB.` },
+        { status: 413 }
+      );
+    }
+
     const { videoId, title, description } = await request.json();
-    
+
+    // Validate video ID format
+    if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid video ID' },
+        { status: 400 }
+      );
+    }
+
+    // Sanitize inputs
+    const safeTitle = (title || 'Unknown Song').slice(0, 200);
+    const safeDescription = (description || '').slice(0, 500);
+
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
@@ -55,8 +126,8 @@ export async function POST(request: NextRequest) {
     }
 
     const userPrompt = `Analyze the chord progression for this song:
-Title: "${title || 'Unknown Song'}"
-${description ? `Description: "${description.slice(0, 500)}"` : ''}
+Title: "${safeTitle}"
+${safeDescription ? `Description: "${safeDescription}"` : ''}
 Video ID: ${videoId}
 
 Based on the title and any context, identify the likely chord progression. If you recognize the song, provide the actual chords. If not, make an educated guess based on the genre/style implied by the title.
@@ -66,6 +137,10 @@ Remember to return ONLY valid JSON.`;
     // Try each model in priority order
     for (const model of AI_MODELS) {
       try {
+        // Timeout protection
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), SECURITY_CONFIG.API_TIMEOUT_MS);
+
         const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
           method: 'POST',
           headers: {
@@ -74,6 +149,7 @@ Remember to return ONLY valid JSON.`;
             'HTTP-Referer': 'https://harmsub.vercel.app',
             'X-Title': 'Harmsub',
           },
+          signal: controller.signal,
           body: JSON.stringify({
             model: model.id,
             messages: [
@@ -84,6 +160,8 @@ Remember to return ONLY valid JSON.`;
             temperature: 0.3, // Lower temperature for more consistent JSON
           }),
         });
+
+        clearTimeout(timeout);
 
         if (!response.ok) {
           console.warn(`Model ${model.name} failed with status ${response.status}`);

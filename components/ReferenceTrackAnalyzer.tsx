@@ -49,6 +49,13 @@ export default function ReferenceTrackAnalyzer({
     const file = acceptedFiles[0];
     if (!file) return;
 
+    const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB limit
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum 25MB.`);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setUploadedFileName(file.name);
@@ -76,7 +83,8 @@ export default function ReferenceTrackAnalyzer({
         setAnalysis(analysisResult);
         onAnalyzed(analysisResult);
       } else {
-        setError(data.error || 'Audio analysis failed. Please try again.');
+        const errorMsg = data.error || 'Audio analysis failed. Please try again.';
+        setError(errorMsg);
       }
     } catch (err) {
       console.error('Audio analysis error:', err);

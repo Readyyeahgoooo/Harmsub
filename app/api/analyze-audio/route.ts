@@ -2,6 +2,11 @@
 // API key is kept server-side only - never exposed to client
 
 import { NextRequest, NextResponse } from 'next/server';
+import { SECURITY_CONFIG, rateLimiter, getClientIdentifier, validateAudioMagicBytes } from '@/lib/security';
+
+// Route segment config for body size limit (App Router)
+export const maxDuration = 30; // 30 second timeout
+export const dynamic = 'force-dynamic';
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
@@ -48,12 +53,95 @@ CRITICAL: Return ONLY valid JSON in this exact format:
 
 export async function POST(request: NextRequest) {
   try {
+    // CORS protection - check origin
+    const origin = request.headers.get('origin');
+    const allowed = SECURITY_CONFIG.ALLOWED_ORIGINS.includes(origin || '');
+    if (!allowed && process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: 'Origin not allowed' },
+        { status: 403 }
+      );
+    }
+
+    // Rate limiting - check per-minute and per-hour limits
+    const clientIp = getClientIdentifier(request);
+    const minuteCheck = rateLimiter.perMinute.check(clientIp);
+    const hourCheck = rateLimiter.perHour.check(clientIp);
+
+    if (!minuteCheck.allowed) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Too many requests. Please try again later.',
+          retryAfter: Math.ceil((minuteCheck.resetTime - Date.now()) / 1000)
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((minuteCheck.resetTime - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': String(minuteCheck.remaining),
+          }
+        }
+      );
+    }
+
+    if (!hourCheck.allowed) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Hourly limit exceeded. Please try again later.',
+          retryAfter: Math.ceil((hourCheck.resetTime - Date.now()) / 1000)
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil((hourCheck.resetTime - Date.now()) / 1000)),
+            'X-RateLimit-Remaining': String(hourCheck.remaining),
+          }
+        }
+      );
+    }
+
+    // Request size limit check (prevents DoS from huge payloads)
+    const contentLength = request.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > SECURITY_CONFIG.MAX_REQUEST_SIZE) {
+      return NextResponse.json(
+        { success: false, error: `Request too large. Maximum ${SECURITY_CONFIG.MAX_REQUEST_SIZE / 1024 / 1024}MB.` },
+        { status: 413 }
+      );
+    }
+
     const { audioData, format, fileName } = await request.json();
     
+    // Validate audio data size
+    if (audioData.length > SECURITY_CONFIG.MAX_AUDIO_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: `Audio file too large. Maximum ${SECURITY_CONFIG.MAX_AUDIO_FILE_SIZE / 1024 / 1024}MB.` },
+        { status: 413 }
+      );
+    }
+
     // Validate input
     if (!audioData) {
       return NextResponse.json(
         { success: false, error: 'No audio data provided' },
+        { status: 400 }
+      );
+    }
+
+    // Validate format
+    if (format && !SECURITY_CONFIG.ALLOWED_AUDIO_FORMATS.includes(format)) {
+      return NextResponse.json(
+        { success: false, error: `Invalid format. Allowed: ${SECURITY_CONFIG.ALLOWED_AUDIO_FORMATS.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Validate file content via magic bytes (prevents spoofed extensions)
+    const magicValidation = validateAudioMagicBytes(audioData, format || 'mp3');
+    if (!magicValidation.valid) {
+      return NextResponse.json(
+        { success: false, error: magicValidation.error || 'Invalid audio file content' },
         { status: 400 }
       );
     }
@@ -72,11 +160,15 @@ export async function POST(request: NextRequest) {
     
     const userPrompt = `Analyze the chord progression in this audio file${fileName ? ` (${fileName})` : ''}.
 
-Identify all chords, their timing, and harmonic functions. 
+Identify all chords, their timing, and harmonic functions.
 Remember to summarize - don't repeat the same progression multiple times, just indicate it's a loop.
 Return ONLY valid JSON.`;
 
     try {
+      // Timeout protection - prevents hanging requests
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), SECURITY_CONFIG.API_TIMEOUT_MS);
+
       const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -85,12 +177,13 @@ Return ONLY valid JSON.`;
           'HTTP-Referer': 'https://harmsub.vercel.app',
           'X-Title': 'Harmsub Audio Analysis',
         },
+        signal: controller.signal,
         body: JSON.stringify({
           model: AUDIO_MODEL,
           messages: [
             { role: 'system', content: CHORD_ANALYSIS_SYSTEM_PROMPT },
-            { 
-              role: 'user', 
+            {
+              role: 'user',
               content: [
                 {
                   type: 'text',
@@ -110,6 +203,8 @@ Return ONLY valid JSON.`;
           temperature: 0.3, // Lower temperature for more consistent analysis
         }),
       });
+
+      clearTimeout(timeout);
 
       if (!response.ok) {
         const errorText = await response.text();
