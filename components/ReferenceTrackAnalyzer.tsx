@@ -42,6 +42,7 @@ export default function ReferenceTrackAnalyzer({
   const [selectedChords, setSelectedChords] = useState<Set<number>>(new Set());
   const [applyMode, setApplyMode] = useState<'modulate' | 'substitute' | 'inspire'>('inspire');
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [chordsApplied, setChordsApplied] = useState(false);
 
   // Audio file upload handling
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -195,26 +196,16 @@ export default function ReferenceTrackAnalyzer({
     }));
   };
 
-  const toggleChordSelection = useCallback((index: number) => {
-    setSelectedChords(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(index)) {
-        newSet.delete(index);
-      } else {
-        newSet.add(index);
-      }
-      return newSet;
-    });
-  }, []);
-
   const selectAllChords = () => {
     if (analysis?.uniqueProgression) {
       setSelectedChords(new Set(analysis.uniqueProgression.map((_, i) => i)));
+      setChordsApplied(false);
     }
   };
 
   const clearSelection = () => {
     setSelectedChords(new Set());
+    setChordsApplied(false);
   };
 
   const applySelectedChords = () => {
@@ -226,8 +217,23 @@ export default function ReferenceTrackAnalyzer({
     
     if (selected.length > 0) {
       onChordsSelected(selected, applyMode);
+      setChordsApplied(true);
     }
   };
+
+  // Reset applied state when selection changes
+  const toggleChordSelectionWithReset = useCallback((index: number) => {
+    setChordsApplied(false);
+    setSelectedChords(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  }, []);
 
   const resetAnalysis = () => {
     setAnalysis(null);
@@ -235,6 +241,7 @@ export default function ReferenceTrackAnalyzer({
     setError('');
     setUploadedFileName('');
     setYoutubeUrl('');
+    setChordsApplied(false);
   };
 
   return (
@@ -413,7 +420,7 @@ export default function ReferenceTrackAnalyzer({
                 {analysis.uniqueProgression.map((chord, index) => (
                   <button
                     key={index}
-                    onClick={() => toggleChordSelection(index)}
+                    onClick={() => toggleChordSelectionWithReset(index)}
                     className={`relative px-4 py-3 rounded-lg border-2 transition-all hover:scale-105 ${
                       FUNCTION_COLORS[chord.function || 'AMB']
                     } ${
@@ -467,13 +474,20 @@ export default function ReferenceTrackAnalyzer({
                   {applyMode === 'substitute' && '• Directly substitute with transposed versions of selected chords'}
                 </div>
 
-                <button
-                  onClick={applySelectedChords}
-                  className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Apply {selectedChords.size} Chord{selectedChords.size > 1 ? 's' : ''} to Harmonization
-                </button>
+                {chordsApplied ? (
+                  <div className="w-full px-4 py-2 bg-green-500 text-white rounded-lg font-medium flex items-center justify-center gap-2">
+                    <Check className="w-4 h-4" />
+                    ✓ {selectedChords.size} Chord{selectedChords.size > 1 ? 's' : ''} Applied! Click "Continue with Reference" below.
+                  </div>
+                ) : (
+                  <button
+                    onClick={applySelectedChords}
+                    className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Apply {selectedChords.size} Chord{selectedChords.size > 1 ? 's' : ''} to Harmonization
+                  </button>
+                )}
               </div>
             )}
           </div>
