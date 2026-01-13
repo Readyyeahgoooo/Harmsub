@@ -5,17 +5,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import VirtualPiano from '@/components/VirtualPiano';
 import AudioRecorder from '@/components/AudioRecorder';
 import FileUploader from '@/components/FileUploader';
-import YouTubeAnalyzer from '@/components/YouTubeAnalyzer';
+import YouTubeChordAnalyzer from '@/components/YouTubeChordAnalyzer';
 import HarmonizationResults from '@/components/HarmonizationResults';
 import HarmonyControls from '@/components/HarmonyControls';
 import { Note, HarmonizationResult } from '@/types';
+import { ReferenceAnalysis, ReferenceChord } from '@/types/referenceTypes';
 import { HarmonicDistance, StylePackName, VoicingStyle } from '@/types/harmonyTypes';
 import { Harmonizer } from '@/lib/harmonizer';
 import { noteToFrequency, numberToNote } from '@/lib/musicTheory';
 import { Midi } from '@tonejs/midi';
 
 export default function Home() {
-  const [inputMethod, setInputMethod] = useState<'piano' | 'audio' | 'file' | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedNotes, setRecordedNotes] = useState<Note[]>([]);
   const [youtubeVideoId, setYoutubeVideoId] = useState('');
@@ -28,10 +28,13 @@ export default function Home() {
   const [styleName, setStyleName] = useState<StylePackName>('pop');
   const [voicingStyle, setVoicingStyle] = useState<VoicingStyle>('clear');
 
+  // Reference Track Analysis
+  const [referenceAnalysis, setReferenceAnalysis] = useState<ReferenceAnalysis | null>(null);
+  const [selectedReferenceChords, setSelectedReferenceChords] = useState<ReferenceChord[]>([]);
+
   const handlePianoRecordStart = () => {
     setIsRecording(true);
     setRecordedNotes([]);
-    setInputMethod('piano');
     // Stay on step 1 while recording - don't advance yet
   };
 
@@ -58,7 +61,6 @@ export default function Home() {
   };
 
   const handleAudioRecorded = (_audioBlob: Blob) => {
-    setInputMethod('audio');
     setCurrentStep(2);
   };
 
@@ -76,7 +78,6 @@ export default function Home() {
 
   const handleFileUploaded = async (file: File, type: 'midi' | 'xml' | 'logic' | 'audio') => {
     setIsLoading(true);
-    setInputMethod('file');
 
     try {
       if (type === 'midi') {
@@ -114,9 +115,17 @@ export default function Home() {
     }
   };
 
-  const handleYouTubeAnalyzed = (videoId: string, _title: string) => {
+  const handleYouTubeAnalyzed = (videoId: string, _title: string, analysis?: ReferenceAnalysis) => {
     setYoutubeVideoId(videoId);
+    if (analysis) {
+      setReferenceAnalysis(analysis);
+    }
     // Don't advance step - user can click "Continue with Reference" button
+  };
+
+  const handleChordsSelected = (chords: ReferenceChord[], _applyMode: 'modulate' | 'substitute' | 'inspire') => {
+    setSelectedReferenceChords(chords);
+    // The apply mode can be used in generateHarmonizations to influence the output
   };
 
   const generateHarmonizations = () => {
@@ -430,7 +439,7 @@ export default function Home() {
             </TabsContent>
 
             <TabsContent value="youtube" className="flex justify-center">
-              <YouTubeAnalyzer onAnalyzed={handleYouTubeAnalyzed} />
+              <YouTubeChordAnalyzer onAnalyzed={handleYouTubeAnalyzed} />
             </TabsContent>
           </Tabs>
         )}
@@ -470,7 +479,10 @@ export default function Home() {
             )}
 
             <div className="max-w-2xl mx-auto">
-              <YouTubeAnalyzer onAnalyzed={handleYouTubeAnalyzed} />
+              <YouTubeChordAnalyzer 
+                onAnalyzed={handleYouTubeAnalyzed} 
+                onChordsSelected={handleChordsSelected}
+              />
             </div>
 
             <div className="flex justify-center gap-4">
